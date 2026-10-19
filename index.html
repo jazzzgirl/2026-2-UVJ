@@ -6,7 +6,7 @@
 <title>프로젝트 상호평가</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
 <style>
 /* 레이아웃: 상단 고정 헤더(오른쪽에 교수자 메뉴) 아래, 한 줄 폭 640~860px의 단일 컬럼 */
 :root {
@@ -25,7 +25,7 @@
   --warn-soft: #FBEBDD;
   --danger: #B3261E;
   --font-body: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
-  --font-head: "Noto Serif KR", "Batang", "AppleMyungjo", serif;
+  --font-head: "Gowun Dodum", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -51,7 +51,7 @@ body {
   word-break: keep-all; overflow-wrap: anywhere;
 }
 h1, h2, h3 { margin: 0; line-height: 1.35; text-wrap: balance; }
-h1, h2 { font-family: var(--font-head); font-weight: 700; letter-spacing: -0.01em; }
+h1, h2 { font-family: var(--font-head); font-weight: 400; letter-spacing: -0.01em; }
 h1 { font-size: clamp(1.6rem, 4.5vw, 2.1rem); }
 h2 { font-size: 1.35rem; }
 h3 { font-size: 1.02rem; font-weight: 700; }
@@ -74,7 +74,7 @@ a { color: var(--link); }
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
 }
 .brand { display: flex; flex-direction: column; line-height: 1.25; margin-right: auto; min-width: 0; }
-.brand b { font-family: var(--font-head); font-size: 1.05rem; }
+.brand b { font-family: var(--font-head); font-weight: 400; font-size: 1.15rem; }
 .brand span { font-size: 0.78rem; opacity: 0.8; }
 .hdr-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .who { font-size: 0.85rem; padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--primary-ink) 16%, transparent); }
@@ -133,7 +133,7 @@ textarea { min-height: 110px; resize: vertical; line-height: 1.6; }
 label.lab { display: block; font-weight: 500; margin-bottom: 6px; }
 
 /* 탭 */
-.tabs { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--line); margin-bottom: 20px; scrollbar-width: thin; }
+.tabs { display: flex; gap: 4px; overflow-x: auto; overflow-y: hidden; border-bottom: 1px solid var(--line); margin-bottom: 20px; scrollbar-width: thin; }
 .tab {
   flex: 0 0 auto; border: 0; background: transparent; padding: 11px 14px; cursor: pointer; color: var(--muted); font-weight: 500;
   border-bottom: 3px solid transparent; margin-bottom: -1px; white-space: nowrap;
@@ -144,7 +144,7 @@ label.lab { display: block; font-weight: 500; margin-bottom: 6px; }
 /* 진행 상황 */
 .prog { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .prog div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
-.prog b { display: block; font-size: 1.25rem; font-family: var(--font-head); }
+.prog b { display: block; font-size: 1.25rem; font-family: var(--font-head); font-weight: 400; }
 .prog span { font-size: 0.82rem; color: var(--muted); }
 @media (max-width: 520px) { .prog { grid-template-columns: 1fr; } }
 
@@ -177,7 +177,7 @@ label.lab { display: block; font-weight: 500; margin-bottom: 6px; }
 .big { font-family: var(--font-head); font-size: 2.6rem; line-height: 1; }
 .quote { border-left: 3px solid var(--line); padding: 2px 0 2px 12px; white-space: pre-wrap; }
 .lock { text-align: center; padding: 40px 16px; }
-.lock b { font-family: var(--font-head); font-size: 1.15rem; display: block; margin-bottom: 6px; }
+.lock b { font-family: var(--font-head); font-weight: 400; font-size: 1.15rem; display: block; margin-bottom: 6px; }
 
 /* 표 */
 .tbl-wrap { overflow-x: auto; }
@@ -204,7 +204,7 @@ td input { min-width: 180px; }
   background: var(--primary); color: var(--primary-ink); padding: 10px 18px; border-radius: 999px; font-weight: 500; max-width: calc(100vw - 32px);
 }
 .notice { background: var(--warn-soft); color: var(--warn); border-radius: 10px; padding: 12px 14px; }
-.back { background: none; border: 0; padding: 0; color: var(--link); cursor: pointer; font-weight: 500; }
+.back { background: none; border: 0; padding: 0; color: var(--link); cursor: pointer; font-weight: 500; align-self: flex-start; text-align: left; }
 </style>
 </head>
 <body>
@@ -298,7 +298,7 @@ function modal({ title, desc, label, type = "password", inputmode, submit = "확
   layer.innerHTML = `<div class="ovl" id="ovl"><form class="modal stack" id="mf" autocomplete="off">
     <h2 style="font-size:1.15rem">${esc(title)}</h2>
     ${desc ? `<p class="muted small">${esc(desc)}</p>` : ""}
-    <div><label class="lab" for="mi">${esc(label)}</label><input id="mi" name="mi" type="${type}" ${inputmode ? `inputmode="${inputmode}"` : ""} required autocomplete="off"></div>
+    <div><label class="lab" for="mi">${esc(label)}</label><input id="mi" name="mi" type="${type}" ${inputmode ? `inputmode="${inputmode}"` : ""} required readonly autocomplete="${type === "password" ? "new-password" : "off"}"></div>
     <p class="err" id="merr" role="alert"></p>
     <div class="row" style="justify-content:flex-end"><button type="button" class="btn" id="mc">취소</button><button class="btn primary" id="ms">${esc(submit)}</button></div>
   </form></div>`;
@@ -307,10 +307,15 @@ function modal({ title, desc, label, type = "password", inputmode, submit = "확
   document.addEventListener("keydown", onKey);
   $("#mc").onclick = close;
   $("#ovl").addEventListener("mousedown", (e) => { if (e.target.id === "ovl") close(); });
-  setTimeout(() => $("#mi").focus(), 30);
+  const inp = $("#mi"); let typed = false;
+  inp.addEventListener("focus", () => inp.removeAttribute("readonly"));   /* 읽기 전용으로 시작해 브라우저 자동 입력을 막고, 칸을 누르면 풀립니다 */
+  inp.addEventListener("input", () => { typed = true; });
+  [150, 500, 1200].forEach((ms) => setTimeout(() => { if (!typed && inp.value) inp.value = ""; }, ms));   /* 혹시 들어온 자동 입력값 지우기 */
+  inp.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); $("#mf").requestSubmit(); } });   /* 엔터키로 확인 */
+  setTimeout(() => inp.focus(), 30);
   $("#mf").onsubmit = async (e) => {
     e.preventDefault();
-    const btn = $("#ms"); btn.disabled = true; $("#merr").textContent = "";
+    const btn = $("#ms"); if (btn.disabled) return; btn.disabled = true; $("#merr").textContent = "";
     try { await onSubmit($("#mi").value.trim()); close(); }
     catch (err) { $("#merr").textContent = err.message; btn.disabled = false; $("#mi").select(); }
   };
@@ -470,7 +475,7 @@ function reRenderKeepTab() { if (S.view === "main" && S.tab === "feedback" && !S
 /* ===== 교수자 메뉴 ===== */
 function viewProf() {
   const P = S.prof, d = P.data;
-  const tabs = [["urls", "영상 주소"], ["feedback", "피드백 공개"], ["eval", "팀 평가"], ["progress", "진행 현황"], ["roster", "명단 등록"]];
+  const tabs = [["urls", "영상 주소"], ["feedback", "피드백 공개"], ["eval", "팀 평가"], ["progress", "진행 현황"], ["score", "점수·엑셀"], ["roster", "명단 등록"]];
   let body = "";
   if (P.form) {
     body = `<div class="stack-lg"><div class="stack"><button class="back" data-act="pform-cancel">← 팀 목록으로</button><h2>${esc(P.form.team)} 평가 (교수)</h2>${videoBtns(d.teams.find((t) => t.name === P.form.team))}</div>${formHtml("prof", { prefill: d.profEvals[P.form.team], min: d.minComment, cancelAct: "pform-cancel" })}</div>`;
@@ -485,6 +490,16 @@ function viewProf() {
     <div class="notice" style="background:var(--soft);color:var(--ink)">공개되는 내용은 <b>다른 팀이 쓴 평가</b>(점수 평균과 주관식 의견)뿐입니다. 평가자 이름은 보이지 않고, 자기 평가와 팀 내 상호 평가는 공개되지 않습니다. 모든 평가가 끝난 뒤에 켜 주세요.</div></div>`;
   } else if (P.tab === "eval") {
     body = `<div class="stack"><p class="muted small">교수는 팀 단위로만 평가합니다.</p>${d.teams.map((t) => `<div class="card stack"><div class="row between"><div><h3>${esc(t.name)}</h3><span class="muted small">${esc(t.members.join(", "))}</span></div><span class="badge ${t.profDone ? "ok" : "warn"}">${t.profDone ? "평가 완료" : "미평가"}</span></div>${videoBtns(t)}<div><button class="btn primary" data-act="pform" data-team="${esc(t.name)}">${t.profDone ? "평가 수정하기" : "평가하기"}</button></div></div>`).join("")}</div>`;
+  } else if (P.tab === "score") {
+    const x = P.exp;
+    if (!x) body = `<div class="notice" style="background:var(--soft);color:var(--ink)">점수를 불러오는 중입니다…</div>`;
+    else {
+      const f = (v) => v === null ? "–" : v.toFixed(1);
+      const wS = Math.round(x.weights.student * 100), wP = Math.round(x.weights.prof * 100);
+      body = `<div class="stack"><p class="muted small">최종 점수 = 학생 평가 ${wS}% + 교수 평가 ${wP}% (100점 만점). 학생 평가는 <b>다른 팀 학생들이 준 점수(항목 평균)의 평균</b>이며, 자기 평가와 팀 내 상호 평가는 팀 점수에 반영되지 않습니다. 학생 평가와 교수 평가가 모두 있어야 최종 점수가 계산됩니다.</p>
+      <div class="card tbl-wrap"><table><thead><tr><th>순위</th><th>팀</th><th>평가 학생</th><th>학생 평가</th><th>교수 평가</th><th>최종</th></tr></thead><tbody>${x.board.map((b) => `<tr><td class="num">${b.rank ?? "–"}</td><td><b>${esc(b.team)}</b><div class="muted small">${esc(b.members.join(", "))}</div></td><td class="num">${b.evaluators}명</td><td class="num">${f(b.student)}</td><td class="num">${f(b.prof)}</td><td class="num"><b>${f(b.final)}</b></td></tr>`).join("")}</tbody></table></div>
+      <div class="row"><button class="btn primary" data-act="xlsx">엑셀로 다운로드</button><button class="btn" data-act="refresh-score">새로고침</button><span class="muted small">점수 요약과 평가 내용 전체(다른 팀·교수·자기·팀 내 상호 평가)가 시트별로 담깁니다.</span></div></div>`;
+    }
   } else if (P.tab === "progress") {
     body = `<div class="stack-lg"><div class="card tbl-wrap"><table><thead><tr><th>팀</th><th>받은 평가(학생)</th><th>교수 평가</th></tr></thead><tbody>${d.teams.map((t) => `<tr><td><b>${esc(t.name)}</b></td><td class="num">${t.received}명</td><td>${t.profDone ? "완료" : "–"}</td></tr>`).join("")}</tbody></table></div>
     <div class="card tbl-wrap"><table><thead><tr><th>학생</th><th>팀</th><th>다른 팀</th><th>자기</th><th>팀 내</th></tr></thead><tbody>${d.students.map((s) => { const ok = s.cross >= s.needCross && s.self >= 1 && s.peer >= s.needPeer; return `<tr><td>${esc(s.name)} ${ok ? `<span class="badge ok">완료</span>` : ""}</td><td>${esc(s.team)}</td><td class="num">${s.cross}/${s.needCross}</td><td class="num">${s.self}/1</td><td class="num">${s.peer}/${s.needPeer}</td></tr>`; }).join("")}</tbody></table></div>
@@ -504,6 +519,52 @@ function openProf() {
   } });
 }
 async function refreshProf(keep = true) { S.prof.data = await api("prof_state", { ppw: S.prof.pw }); if (S.view === "prof") { const y = window.scrollY; render(); if (keep) window.scrollTo(0, y); } }
+
+async function loadScore() {
+  S.prof.exp = await api("prof_export", { ppw: S.prof.pw });
+  if (S.view === "prof" && S.prof.tab === "score") { const y = window.scrollY; render(); window.scrollTo(0, y); }
+}
+function loadXlsxLib() {
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((ok, no) => {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    s.onload = ok; s.onerror = () => no(new Error("엑셀 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요."));
+    document.head.appendChild(s);
+  });
+}
+async function downloadXlsx() {
+  await loadScore();
+  await loadXlsxLib();
+  const x = S.prof.exp, nameBySid = {};
+  x.roster.forEach((r) => { nameBySid[r.sid] = r.name; });
+  const avg = (a) => a.length ? Math.round(a.reduce((p, v) => p + v, 0) / a.length * 100) / 100 : "";
+  const wS = Math.round(x.weights.student * 100), wP = Math.round(x.weights.prof * 100);
+  const wb = XLSX.utils.book_new();
+  const add = (name, rows, widths) => { const ws = XLSX.utils.aoa_to_sheet(rows); ws["!cols"] = widths.map((w) => ({ wch: w })); XLSX.utils.book_append_sheet(wb, ws, name); };
+
+  add("최종 점수", [["순위", "팀", "팀원", "평가한 학생 수", `학생 평가(100점)`, `교수 평가(100점)`, `최종 점수 (학생 ${wS}% + 교수 ${wP}%)`]]
+    .concat(x.board.map((b) => [b.rank ?? "", b.team, b.members.join(", "), b.evaluators, b.student ?? "", b.prof ?? "", b.final ?? ""]))
+    .concat([[], [`※ 학생 평가 = 다른 팀 학생이 준 점수(6개 항목 평균)의 평균 ÷ 5 × 100`], [`※ 교수 평가 = 6개 항목 평균 ÷ 5 × 100`], [`※ 자기 평가와 팀 내 상호 평가는 팀 점수에 반영하지 않습니다.`]]),
+    [6, 10, 22, 14, 16, 16, 28]);
+
+  const head = (type, extra) => extra.concat(FORMS[type].items.map((t, i) => `${i + 1}. ${t}`), ["항목 평균", FORMS[type].c1.label, FORMS[type].c2.label]);
+  const sheet = (type, extraHead, rowFn) => {
+    const list = x.evals.filter((e) => e.type === type).map(rowFn);
+    return [head(type, extraHead)].concat(list);
+  };
+  const wid = (n) => [12, 12, 10, 10].concat(Array(n).fill(14), [10, 40, 40]);
+  const rowOf = (extra, e) => extra.concat(e.scores, [avg(e.scores), e.c1, e.c2]);
+
+  add("다른 팀 평가", sheet("cross", ["평가자 학번", "평가자 이름", "평가자 팀", "대상 팀"], (e) => rowOf([e.sid, e.name, e.team, e.targetTeam], e)), wid(6));
+  add("교수 평가", sheet("prof", ["대상 팀"], (e) => rowOf([e.targetTeam], e)), [10].concat(Array(6).fill(14), [10, 40, 40]));
+  add("자기 평가", sheet("self", ["평가자 학번", "평가자 이름", "팀"], (e) => rowOf([e.sid, e.name, e.team], e)), [12, 12, 10].concat(Array(6).fill(14), [10, 40, 40]));
+  add("팀 내 상호 평가", sheet("peer", ["평가자 학번", "평가자 이름", "팀", "평가 대상 학번", "평가 대상 이름"], (e) => rowOf([e.sid, e.name, e.team, e.targetSid, nameBySid[e.targetSid] || ""], e)), [12, 12, 10, 14, 14].concat(Array(5).fill(14), [10, 40, 40]));
+
+  const d = new Date(), p = (n) => String(n).padStart(2, "0");
+  XLSX.writeFile(wb, `프로젝트01_상호평가_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}.xlsx`);
+  toast("엑셀 파일을 내려받았습니다.");
+}
 
 /* ===== 이벤트 ===== */
 document.addEventListener("click", async (e) => {
@@ -525,7 +586,9 @@ document.addEventListener("click", async (e) => {
     if (a === "form-cancel") { S.form = null; return render(); }
 
     /* 교수자 */
-    if (a === "ptab") { S.prof.tab = el.dataset.tab; S.prof.form = null; await refreshProf(false); return; }
+    if (a === "ptab") { S.prof.tab = el.dataset.tab; S.prof.form = null; S.prof.exp = null; await refreshProf(false); if (S.prof.tab === "score") await loadScore(); return; }
+    if (a === "refresh-score") { await loadScore(); return toast("새로고침했습니다."); }
+    if (a === "xlsx") { el.disabled = true; try { await downloadXlsx(); } finally { el.disabled = false; } return; }
     if (a === "refresh-prof") { await refreshProf(); return toast("새로고침했습니다."); }
     if (a === "save-url") { const tr = el.closest("tr"); await api("prof_set_urls", { ppw: S.prof.pw, team: el.dataset.team, long: tr.querySelector('[data-f="long"]').value.trim(), short: tr.querySelector('[data-f="short"]').value.trim() }); const y = window.scrollY; S.prof.data = await api("prof_state", { ppw: S.prof.pw }); render(); window.scrollTo(0, y); return toast(`${el.dataset.team} 영상 주소를 저장했습니다.`); }
     if (a === "pform") { S.prof.form = { team: el.dataset.team }; render(); return bindForm(async (v) => { await api("prof_submit", { ppw: S.prof.pw, team: S.prof.form.team, ...v }); S.prof.form = null; await refreshProf(false); toast("교수 평가를 저장했습니다."); }); }
