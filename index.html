@@ -538,7 +538,7 @@ function viewProfPick() {
 function viewProf() {
   if (!S.prof.project) return viewProfPick();
   const P = S.prof, d = P.data;
-  const tabs = [["urls", "영상 주소"], ["feedback", "피드백 공개"], ["eval", "팀 평가"], ["progress", "진행 현황"], ["score", "점수·엑셀"], ["roster", "명단 등록"]];
+  const tabs = [["urls", "영상 주소"], ["feedback", "피드백 공개"], ["fbview", "피드백 보기"], ["eval", "팀 평가"], ["progress", "진행 현황"], ["score", "점수·엑셀"], ["roster", "명단 등록"]];
   let body = "";
   if (P.form) {
     body = `<div class="stack-lg"><div class="stack"><button class="back" data-act="pform-cancel">← 팀 목록으로</button><h2>${esc(P.form.team)} 평가 (교수)</h2>${videoBtns(d.teams.find((t) => t.name === P.form.team))}</div>${formHtml("prof", { prefill: d.profEvals[P.form.team], min: d.minComment, cancelAct: "pform-cancel" })}</div>`;
@@ -550,6 +550,23 @@ function viewProf() {
   } else if (P.tab === "feedback") {
     body = `<div class="card stack"><label class="switch"><input type="checkbox" id="fbOpen" data-act="toggle-fb" ${d.feedbackOpen ? "checked" : ""}><span class="sw"></span><span><b id="fbState">${d.feedbackOpen ? "피드백 공개 중" : "피드백 비공개"}</b><br><span class="muted small">켜면 학생의 '피드백 보기'에서 우리 팀이 받은 <b>다른 팀 평가의 주관식 의견</b>을 볼 수 있습니다.</span></span></label>
     <div class="notice" style="background:var(--soft);color:var(--ink)">공개되는 내용은 <b>다른 팀 평가의 주관식 의견</b>뿐입니다. 점수와 교수 평가, 자기 평가, 팀 내 상호 평가는 공개되지 않고, 평가자 이름도 보이지 않습니다. 모든 평가가 끝난 뒤에 켜 주세요.</div></div>`;
+  } else if (P.tab === "fbview") {
+    const x = P.fbd, F = FM();
+    if (!x) body = `<div class="notice" style="background:var(--soft);color:var(--ink)">피드백을 불러오는 중입니다…</div>`;
+    else {
+      const mode = P.fbMode || "team";
+      const qa = (f, c) => `<div class="small"><span class="muted">${esc(f.c1.label)}</span><div>${esc(c.c1) || "–"}</div></div><div class="small"><span class="muted">${esc(f.c2.label)}</span><div>${esc(c.c2) || "–"}</div></div>`;
+      const none = `<p class="muted small">아직 받은 피드백이 없습니다.</p>`;
+      let list;
+      if (mode === "team") list = x.teams.map((t) => `<div class="card stack"><div><h3>${esc(t.name)}</h3><span class="muted small">${esc(t.members.join(", "))} · 다른 팀 평가 ${t.cross.length}건</span></div>
+        ${t.cross.length ? t.cross.map((e, i) => `<div class="quote stack"><b class="small">${esc(e.from)} (${esc(e.fromTeam)})</b>${qa(F.cross, e)}</div>`).join("") : none}
+        ${t.prof ? `<div class="quote stack"><b class="small">교수 의견</b>${qa(F.prof, t.prof)}</div>` : ""}</div>`).join("");
+      else list = x.students.map((s) => `<div class="card stack"><div><h3>${esc(s.name)}</h3><span class="muted small">${esc(s.team)} · 팀원에게 받은 평가 ${s.peer.length}건</span></div>
+        ${s.peer.length ? s.peer.map((e) => `<div class="quote stack"><b class="small">${esc(e.from)}</b>${qa(F.peer, e)}</div>`).join("") : none}
+        ${s.self ? `<div class="quote stack"><b class="small">본인의 자기 평가</b>${qa(F.self, s.self)}</div>` : ""}</div>`).join("");
+      body = `<div class="stack"><div class="row"><button class="btn small ${mode === "team" ? "primary" : ""}" data-act="fbmode" data-mode="team">팀별</button><button class="btn small ${mode === "student" ? "primary" : ""}" data-act="fbmode" data-mode="student">학생별</button><button class="btn small" data-act="refresh-fbv">새로고침</button></div>
+      <p class="muted small">${mode === "team" ? "각 팀이 다른 팀에게서 받은 주관식 의견과 교수 의견입니다." : "각 학생이 같은 팀 팀원에게서 받은 주관식 의견과 본인의 자기 평가입니다."} 교수자 화면에서만 평가자 이름이 보입니다.</p>${list}</div>`;
+    }
   } else if (P.tab === "eval") {
     body = `<div class="stack"><p class="muted small">교수는 팀 단위로만 평가합니다.</p>${d.teams.map((t) => `<div class="card stack"><div class="row between"><div><h3>${esc(t.name)}</h3><span class="muted small">${esc(t.members.join(", "))}</span></div><span class="badge ${t.profDone ? "ok" : "warn"}">${t.profDone ? "평가 완료" : "미평가"}</span></div>${videoBtns(t)}<div><button class="btn primary" data-act="pform" data-team="${esc(t.name)}">${t.profDone ? "평가 수정하기" : "평가하기"}</button></div></div>`).join("")}</div>`;
   } else if (P.tab === "score") {
@@ -575,7 +592,7 @@ function viewProf() {
     <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" aria-selected="${P.tab === k}" data-act="ptab" data-tab="${k}">${l}</button>`).join("")}</div>`}${body}</div>`;
 }
 function openProf() {
-  const enter = () => { S.prof.project = null; S.prof.data = null; S.prof.exp = null; S.prof.form = null; S.view = "prof"; render(); };
+  const enter = () => { S.prof.project = null; S.prof.data = null; S.prof.exp = null; S.prof.fbd = null; S.prof.form = null; S.view = "prof"; render(); };
   if (S.prof.pw) { S.prevView = S.view === "prof" ? S.prevView : S.view; return enter(); }   /* 이미 인증했으면 프로젝트 선택부터 */
   modal({ title: "교수자 메뉴", desc: "교수자 비밀번호를 입력하세요.", label: "비밀번호", onSubmit: async (v) => {
     const r = await api("prof_login", { ppw: v }); S.prof.pw = v; S.projects = r.projects;
@@ -584,6 +601,10 @@ function openProf() {
 }
 async function refreshProf(keep = true) { S.prof.data = await api("prof_state", { ppw: S.prof.pw, project: S.prof.project }); if (S.view === "prof") { const y = window.scrollY; render(); if (keep) window.scrollTo(0, y); } }
 
+async function loadFbv() {
+  S.prof.fbd = await api("prof_feedback", { ppw: S.prof.pw, project: S.prof.project });
+  if (S.view === "prof" && S.prof.tab === "fbview") { const y = window.scrollY; render(); window.scrollTo(0, y); }
+}
 async function loadScore() {
   S.prof.exp = await api("prof_export", { ppw: S.prof.pw, project: S.prof.project });
   if (S.view === "prof" && S.prof.tab === "score") { const y = window.scrollY; render(); window.scrollTo(0, y); }
@@ -652,14 +673,16 @@ document.addEventListener("click", async (e) => {
     if (a === "form-cancel") { S.form = null; return render(); }
 
     /* 교수자 */
-    if (a === "ptab") { S.prof.tab = el.dataset.tab; S.prof.form = null; S.prof.exp = null; await refreshProf(false); if (S.prof.tab === "score") await loadScore(); return; }
+    if (a === "ptab") { S.prof.tab = el.dataset.tab; S.prof.form = null; S.prof.exp = null; await refreshProf(false); if (S.prof.tab === "score") await loadScore(); if (S.prof.tab === "fbview") await loadFbv(); return; }
     if (a === "refresh-score") { await loadScore(); return toast("새로고침했습니다."); }
     if (a === "xlsx") { el.disabled = true; try { await downloadXlsx(); } finally { el.disabled = false; } return; }
     if (a === "refresh-prof") { await refreshProf(); return toast("새로고침했습니다."); }
     if (a === "save-url") { const tr = el.closest("tr"); await api("prof_set_urls", { ppw: S.prof.pw, project: S.prof.project, team: el.dataset.team, long: tr.querySelector('[data-f="long"]').value.trim(), short: tr.querySelector('[data-f="short"]').value.trim() }); const y = window.scrollY; S.prof.data = await api("prof_state", { ppw: S.prof.pw, project: S.prof.project }); render(); window.scrollTo(0, y); return toast(`${el.dataset.team} 영상 주소를 저장했습니다.`); }
     if (a === "pform") { S.prof.form = { team: el.dataset.team }; render(); return bindForm(async (v) => { await api("prof_submit", { ppw: S.prof.pw, project: S.prof.project, team: S.prof.form.team, ...v }); S.prof.form = null; await refreshProf(false); toast("교수 평가를 저장했습니다."); }); }
     if (a === "pform-cancel") { S.prof.form = null; return render(); }
-    if (a === "pproj") { S.prof.project = el.dataset.no; S.prof.form = null; S.prof.exp = null; S.prof.data = await api("prof_state", { ppw: S.prof.pw, project: S.prof.project }); S.prof.tab = S.prof.data.rosterCount ? "urls" : "roster"; return render(); }
+    if (a === "fbmode") { S.prof.fbMode = el.dataset.mode; return render(); }
+    if (a === "refresh-fbv") { await loadFbv(); return; }
+    if (a === "pproj") { S.prof.project = el.dataset.no; S.prof.form = null; S.prof.exp = null; S.prof.fbd = null; S.prof.data = await api("prof_state", { ppw: S.prof.pw, project: S.prof.project }); S.prof.tab = S.prof.data.rosterCount ? "urls" : "roster"; return render(); }
     if (a === "save-roster") { const text = $("#rosterText").value; $("#rerr").textContent = ""; try { const r = await api("prof_set_roster", { ppw: S.prof.pw, project: S.prof.project, text }); if (S.pw && S.project === S.prof.project) { try { S.students = (await api("enter", { project: S.project, pw: S.pw })).students; } catch (e2) { /* 다음 입장 때 갱신 */ } } await refreshProf(false); toast(`${r.count}명, ${r.teams}개 팀을 등록했습니다.`); } catch (err) { $("#rerr").textContent = err.message; } return; }
   } catch (err) { toast(err.message); }
 });
