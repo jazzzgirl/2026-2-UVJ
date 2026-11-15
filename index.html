@@ -222,8 +222,9 @@ td input { min-width: 180px; }
 /* ===== 설정: Apps Script 웹 앱 배포 후 받은 주소를 아래에 붙여 넣으세요 ===== */
 const API_URL = "https://script.google.com/macros/s/AKfycbwVnyTv1lEwv9NdYCSQAJJZcgav9lqvncw8LwF7xGNu2FQTiQV_TGzil1owHpsDJwdZTA/exec";
 
-/* ===== 평가 항목 (Code.gs의 CRITERIA_COUNT와 항목 수가 같아야 합니다) ===== */
-const FORMS = {
+/* ===== 평가 항목: 프로젝트별 (Code.gs의 PROJECTS.count와 항목 수가 같아야 합니다) ===== */
+const FORMS_ALL = {
+  "01": {
   cross: {
     title: "다른 팀 평가",
     items: [
@@ -262,12 +263,56 @@ const FORMS = {
     c1: { label: "고마웠던 점", ph: "함께 작업하며 도움이 된 점을 적어 주세요." },
     c2: { label: "아쉬웠던 점", ph: "다음 협업에 도움이 되도록 구체적으로 적어 주세요." }
   }
+},
+  "02": {
+  cross: {
+    title: "다른 팀 평가",
+    items: [
+      "원형(설화·문화유산)의 핵심 이야기가 영상에서 느껴진다",
+      "현대적 재해석이 분명하고 신선하다",
+      "이야기의 구성과 흐름이 짜임새 있어 끝까지 몰입된다",
+      "촬영·편집·소리·자막 등 영상 완성도가 높다",
+      "숏폼이 첫 장면부터 시선을 끌고, 본편과 한 팀의 영상임을 알아볼 수 있다",
+      "활용 제안이 구체적이고 실현 가능해 보인다",
+      "발표가 명확하고, 원형 자료와 사용 자료의 출처가 정확히 밝혀졌다"
+    ],
+    c1: { label: "가장 인상 깊었던 장면과 그 이유", ph: "원형과 재해석이 만나는 장면이 있다면 함께 적어 주세요." },
+    c2: { label: "더 나아졌으면 하는 점 (개선 제안)", ph: "비난보다 개선 제안의 형태로 적어 주세요." }
+  },
+  self: {
+    title: "우리 팀 자기 평가",
+    items: [
+      "우리 팀 영상은 기획한 재해석 방향을 잘 전달했다",
+      "본편과 숏폼이 한 팀의 영상임을 알아볼 수 있다",
+      "나는 맡은 역할을 충실히 수행했다",
+      "나는 원형 조사와 각색 단계에서 아이디어를 적극적으로 냈다",
+      "나는 제작 중 어려움을 스스로 해결하려고 노력했다",
+      "나는 활용 제안서 작성에 기여했다"
+    ],
+    c1: { label: "이번 프로젝트에서 새로 배운 점", ph: "원형 조사, 각색, 촬영·편집 과정에서 배운 것을 구체적으로 적어 주세요." },
+    c2: { label: "다음에 개선하고 싶은 점", ph: "다음 프로젝트에서 다르게 해 보고 싶은 것을 적어 주세요." }
+  },
+  peer: {
+    title: "팀 내 상호 평가",
+    items: [
+      "맡은 역할(연출·각본, 촬영, 편집, 미술·사운드)을 책임감 있게 수행했다",
+      "회의와 촬영·편집 일정에 성실히 참여하고 약속을 지켰다",
+      "아이디어를 적극적으로 내고 상대의 의견을 존중했다",
+      "협업과 소통이 원활했다 (자료 공유, 일정 공유, 피드백 반영)",
+      "최종 결과물(영상·활용 제안서)에 기여한 정도"
+    ],
+    c1: { label: "고마웠던 점", ph: "함께 작업하며 도움이 된 점을 구체적으로 적어 주세요." },
+    c2: { label: "아쉬웠던 점", ph: "다음 협업에 도움이 되도록 구체적으로 적어 주세요." }
+  }
+}
 };
-FORMS.prof = FORMS.cross;
+Object.values(FORMS_ALL).forEach((f) => { f.prof = f.cross; });
+/* 지금 화면이 다루는 프로젝트의 양식 (교수자 메뉴에서는 교수자가 고른 프로젝트) */
+const FM = () => FORMS_ALL[S.view === "prof" ? S.prof.project : S.project] || FORMS_ALL["01"];
 
 /* ===== 상태 ===== */
-const S = { view: "projects", pw: "", students: [], auth: null, data: null, tab: "cross", form: null, fb: null,
-  prof: { pw: "", data: null, tab: "urls", form: null }, prevView: "projects" };
+const S = { view: "projects", project: "01", projects: null, projectsErr: "", pw: "", students: [], auth: null, data: null, tab: "cross", form: null, fb: null,
+  prof: { pw: "", project: null, data: null, tab: "urls", form: null }, prevView: "projects" };
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -284,7 +329,8 @@ async function api(action, payload = {}) {
   if (!data.ok) throw new Error(data.error || "요청에 실패했습니다.");
   return data;
 }
-const sAuth = () => ({ pw: S.pw, id: S.auth.id, sid: S.auth.sid });
+const sAuth = () => ({ project: S.project, pw: S.pw, id: S.auth.id, sid: S.auth.sid });
+const projTitle = (no) => { const p = (S.projects || []).find((x) => x.no === no); return p ? p.title : ""; };
 
 function toast(msg) {
   const old = $(".toast"); if (old) old.remove();
@@ -327,7 +373,7 @@ function renderHeader() {
   if (S.auth && S.data) right.push(`<span class="who">${esc(S.data.me.team)} · ${esc(S.data.me.name)}</span><button class="hbtn" data-act="logout">나가기</button>`);
   right.push(`<button class="hbtn" data-act="prof" aria-pressed="${S.view === "prof"}">교수자 메뉴</button>`);
   $("#hdrRight").innerHTML = right.join("");
-  $("#crumb").textContent = S.view === "prof" ? "교수자 메뉴" : S.view === "projects" ? "프로젝트 상호평가" : "프로젝트 01 · 학과 홍보 영상 제작";
+  $("#crumb").textContent = S.view === "prof" ? "교수자 메뉴" : S.view === "projects" ? "프로젝트 상호평가" : `프로젝트 ${S.project} · ${projTitle(S.project)}`;
 }
 
 /* ===== 화면 전환 ===== */
@@ -341,14 +387,25 @@ function render() {
 }
 
 function viewProjects() {
+  const list = S.projects;
+  let cards;
+  if (!API_URL) cards = "";
+  else if (S.projectsErr) cards = `<div class="notice">${esc(S.projectsErr)} <button class="btn small" data-act="reload-projects">다시 불러오기</button></div>`;
+  else if (!list) cards = `<p class="muted">프로젝트 목록을 불러오는 중입니다…</p>`;
+  else cards = `<div class="stack">${list.map((p) => p.active
+    ? `<div class="card proj"><span class="no num">${esc(p.no)}</span><div><h3>${esc(p.title)}</h3>${p.desc ? `<p class="muted small">${esc(p.desc)}</p>` : ""}</div><button class="btn primary" data-act="open-proj" data-no="${esc(p.no)}">입장하기</button></div>`
+    : `<div class="card proj off"><span class="no num">${esc(p.no)}</span><div><h3>${esc(p.title)}</h3></div><span class="badge">준비 중</span></div>`).join("")}</div>`;
   return `<div class="stack-lg">
-    <div class="stack"><h1>상호평가</h1><p class="muted">학과 홍보영상 제작 발표를 보고 평가합니다. 오늘은 프로젝트 01을 평가합니다.</p></div>
+    <div class="stack"><h1>상호평가</h1><p class="muted">발표를 보고 프로젝트별로 상호평가를 진행합니다. 교수자가 연 프로젝트만 입장할 수 있습니다.</p></div>
     ${API_URL ? "" : `<div class="notice"><b>서버 주소가 설정되지 않았습니다.</b> index.html의 API_URL에 Apps Script 웹 앱 주소를 넣어 주세요.</div>`}
-    <div class="stack">
-      <div class="card proj"><span class="no num">01</span><div><h3>학과 홍보 영상 제작</h3><p class="muted small">롱폼·숏폼 영상 발표 상호평가</p></div><button class="btn primary" data-act="open-proj">입장하기</button></div>
-      <div class="card proj off"><span class="no num">02</span><div><h3>프로젝트 02</h3><p class="muted small">주제 미정</p></div><span class="badge">준비 중</span></div>
-      <div class="card proj off"><span class="no num">03</span><div><h3>개인 프로젝트</h3></div><span class="badge">준비 중</span></div>
-    </div></div>`;
+    ${cards}</div>`;
+}
+async function loadProjects() {
+  S.projectsErr = "";
+  if (!API_URL) return;
+  try { S.projects = (await api("projects")).projects; }
+  catch (e) { S.projects = null; S.projectsErr = e.message; }
+  if (S.view === "projects") render();
 }
 
 function viewPick() {
@@ -405,7 +462,7 @@ function viewMain() {
 
 /* ===== 평가 양식 ===== */
 function formHtml(type, ctx) {
-  const f = FORMS[type], pre = ctx.prefill || {}, min = ctx.min || 10;
+  const f = FM()[type], pre = ctx.prefill || {}, min = ctx.min || 10;
   const items = f.items.map((t, i) => `<fieldset class="q" data-q="${i}"><legend>${i + 1}. ${esc(t)}</legend><div class="scale">${[1, 2, 3, 4, 5].map((n) => `<label><input type="radio" name="q${i}" value="${n}" ${pre.scores && pre.scores[i] === n ? "checked" : ""}><span>${n}</span></label>`).join("")}</div><div class="ends"><span>1 아쉬움</span><span>5 매우 우수</span></div></fieldset>`).join("");
   const cm = (k, v) => `<div class="cmt" data-c="${k}"><label class="lab" for="${k}">${esc(f[k].label)} <span class="badge warn">필수</span></label><textarea id="${k}" placeholder="${esc(f[k].ph)}" maxlength="1000">${esc(v || "")}</textarea><div class="count num" data-count="${k}">0자 · ${min}자 이상</div></div>`;
   return `<form id="evalForm" class="stack" data-type="${type}" data-min="${min}" novalidate>
@@ -415,7 +472,7 @@ function formHtml(type, ctx) {
     <div class="row"><button class="btn primary" type="submit">${ctx.submitLabel || "제출하기"}</button><button type="button" class="btn" data-act="${ctx.cancelAct}">취소</button></div></form>`;
 }
 function readForm() {
-  const form = $("#evalForm"), type = form.dataset.type, n = FORMS[type].items.length, min = Number(form.dataset.min);
+  const form = $("#evalForm"), type = form.dataset.type, n = FM()[type].items.length, min = Number(form.dataset.min);
   const scores = []; let bad = false;
   for (let i = 0; i < n; i++) {
     const r = form.querySelector(`input[name="q${i}"]:checked`);
@@ -450,17 +507,14 @@ function viewFeedback() {
   if (!S.data.feedbackOpen) return `<div class="card lock"><b>아직 공개되지 않았습니다</b><p class="muted">모든 평가가 끝난 뒤 교수자가 공개하면 이곳에서 볼 수 있습니다.</p></div>`;
   if (!S.fb) return `<p class="muted">불러오는 중입니다…</p>`;
   if (S.fb.error) return `<div class="notice">${esc(S.fb.error)}</div>`;
-  const fb = S.fb, items = FORMS.cross.items;
-  const valid = fb.items.filter((v) => v !== null);
-  const overall = valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : null;
-  const fmt = (v) => (v === null ? "–" : v.toFixed(1));
-  const bar = (label, v) => `<div class="bar"><span>${esc(label)}</span><span class="track"><span class="fill" style="width:${v === null ? 0 : (v / 5) * 100}%"></span></span><span class="val num">${fmt(v)}</span></div>`;
-  const prof = fb.prof ? `<div class="card stack"><div class="row between"><h3>교수 평가</h3><span class="badge">${fb.prof.scores.length ? (fb.prof.scores.reduce((a, b) => a + b, 0) / fb.prof.scores.length).toFixed(1) + "점 평균" : ""}</span></div>${items.map((t, i) => bar(t, fb.prof.scores[i])).join("")}<div class="stack"><div><b class="small muted">${esc(FORMS.cross.c1.label)}</b><div class="quote">${esc(fb.prof.c1)}</div></div><div><b class="small muted">${esc(FORMS.cross.c2.label)}</b><div class="quote">${esc(fb.prof.c2)}</div></div></div></div>` : "";
+  const fb = S.fb, F = FM();
+  const pair = (c) => `<div><b class="small muted">${esc(F.cross.c1.label)}</b><div class="quote">${esc(c.c1)}</div></div><div><b class="small muted">${esc(F.cross.c2.label)}</b><div class="quote">${esc(c.c2)}</div></div>`;
+  const cmts = fb.comments.length
+    ? `<div class="stack"><h2>다른 팀의 의견</h2>${fb.comments.map((c, i) => `<div class="card stack"><b class="small muted">평가자 ${i + 1}</b>${pair(c)}</div>`).join("")}</div>`
+    : `<div class="card"><p class="muted">아직 받은 의견이 없습니다.</p></div>`;
   return `<div class="stack-lg">
-    <div class="card stack"><div class="row between"><div><h3>${esc(fb.team)}이(가) 다른 팀에게 받은 평가</h3><p class="muted small">평가자 ${fb.count}명 · 평가자 이름은 공개되지 않습니다.</p></div><div><span class="big num">${fmt(overall)}</span><span class="muted"> / 5</span></div></div>
-    ${fb.count ? items.map((t, i) => bar(t, fb.items[i])).join("") : `<p class="muted">아직 받은 평가가 없습니다.</p>`}</div>
-    ${fb.comments.length ? `<div class="stack"><h2>주관식 의견</h2>${fb.comments.map((c, i) => `<div class="card stack"><b class="small muted">평가자 ${i + 1}</b><div><b class="small muted">${esc(FORMS.cross.c1.label)}</b><div class="quote">${esc(c.c1)}</div></div><div><b class="small muted">${esc(FORMS.cross.c2.label)}</b><div class="quote">${esc(c.c2)}</div></div></div>`).join("")}</div>` : ""}
-    ${prof}
+    <div class="card stack"><h3>${esc(fb.team)}이(가) 받은 주관식 의견</h3><p class="muted small">다른 팀 평가자 ${fb.count}명 · 평가자 이름은 공개되지 않습니다. 점수와 교수 평가는 공개하지 않고, 다른 팀이 쓴 주관식 의견만 보여 줍니다.</p></div>
+    ${cmts}
     <p class="muted small">자기 평가와 팀 내 상호 평가는 이곳에 표시되지 않습니다.</p></div>`;
 }
 async function loadFeedback() {
@@ -473,7 +527,16 @@ async function loadFeedback() {
 function reRenderKeepTab() { if (S.view === "main" && S.tab === "feedback" && !S.form) { const y = window.scrollY; renderHeader(); $("#app").innerHTML = viewMain(); window.scrollTo(0, y); } }
 
 /* ===== 교수자 메뉴 ===== */
+function viewProfPick() {
+  const list = S.projects || [];
+  return `<div class="stack-lg"><div class="row between"><h1>교수자 메뉴</h1><button class="btn" data-act="prof-close">닫기</button></div>
+    <div class="stack"><h2>프로젝트를 선택하세요</h2><p class="muted small">선택한 프로젝트의 영상 주소, 피드백 공개, 팀 평가, 진행 현황, 점수·엑셀을 관리합니다. 학생 입장 여부는 구글 시트 '프로젝트' 탭의 비밀번호로 정합니다.</p></div>
+    <div class="stack">${list.map((p) => p.ready
+      ? `<div class="card proj"><span class="no num">${esc(p.no)}</span><div><h3>${esc(p.title)}</h3><p class="muted small">${p.active ? "학생 입장 가능" : "학생 입장 닫힘 (비밀번호 없음)"}</p></div><button class="btn primary" data-act="pproj" data-no="${esc(p.no)}">선택</button></div>`
+      : `<div class="card proj off"><span class="no num">${esc(p.no)}</span><div><h3>${esc(p.title)}</h3></div><span class="badge">준비 중</span></div>`).join("")}</div></div>`;
+}
 function viewProf() {
+  if (!S.prof.project) return viewProfPick();
   const P = S.prof, d = P.data;
   const tabs = [["urls", "영상 주소"], ["feedback", "피드백 공개"], ["eval", "팀 평가"], ["progress", "진행 현황"], ["score", "점수·엑셀"], ["roster", "명단 등록"]];
   let body = "";
@@ -485,9 +548,8 @@ function viewProf() {
     body = `<div class="stack"><p class="muted small">팀별 영상 주소를 입력하고 저장하면 학생 평가 화면에 영상 버튼이 나타납니다. 주소를 비우고 저장하면 버튼이 꺼집니다.</p>
     <div class="card tbl-wrap"><table><thead><tr><th>팀</th><th>롱폼 영상 주소</th><th>숏폼 영상 주소</th><th></th></tr></thead><tbody>${d.teams.map((t) => `<tr data-team="${esc(t.name)}"><td><b>${esc(t.name)}</b><div class="muted small">${esc(t.members.join(", "))}</div></td><td><input type="url" data-f="long" value="${esc(t.long)}" placeholder="https://" aria-label="${esc(t.name)} 롱폼 주소"></td><td><input type="url" data-f="short" value="${esc(t.short)}" placeholder="https://" aria-label="${esc(t.name)} 숏폼 주소"></td><td><button class="btn small primary" data-act="save-url" data-team="${esc(t.name)}">저장</button></td></tr>`).join("")}</tbody></table></div></div>`;
   } else if (P.tab === "feedback") {
-    body = `<div class="card stack"><label class="switch"><input type="checkbox" id="fbOpen" data-act="toggle-fb" ${d.feedbackOpen ? "checked" : ""}><span class="sw"></span><span><b id="fbState">${d.feedbackOpen ? "피드백 공개 중" : "피드백 비공개"}</b><br><span class="muted small">켜면 학생의 '피드백 보기'에서 우리 팀이 받은 평가를 볼 수 있습니다.</span></span></label>
-    <label class="row" style="gap:8px"><input type="checkbox" id="incProf" data-act="toggle-prof" ${d.includeProf ? "checked" : ""} style="width:auto;min-height:0"><span>교수 평가도 함께 공개</span></label>
-    <div class="notice" style="background:var(--soft);color:var(--ink)">공개되는 내용은 <b>다른 팀이 쓴 평가</b>(점수 평균과 주관식 의견)뿐입니다. 평가자 이름은 보이지 않고, 자기 평가와 팀 내 상호 평가는 공개되지 않습니다. 모든 평가가 끝난 뒤에 켜 주세요.</div></div>`;
+    body = `<div class="card stack"><label class="switch"><input type="checkbox" id="fbOpen" data-act="toggle-fb" ${d.feedbackOpen ? "checked" : ""}><span class="sw"></span><span><b id="fbState">${d.feedbackOpen ? "피드백 공개 중" : "피드백 비공개"}</b><br><span class="muted small">켜면 학생의 '피드백 보기'에서 우리 팀이 받은 <b>다른 팀 평가의 주관식 의견</b>을 볼 수 있습니다.</span></span></label>
+    <div class="notice" style="background:var(--soft);color:var(--ink)">공개되는 내용은 <b>다른 팀 평가의 주관식 의견</b>뿐입니다. 점수와 교수 평가, 자기 평가, 팀 내 상호 평가는 공개되지 않고, 평가자 이름도 보이지 않습니다. 모든 평가가 끝난 뒤에 켜 주세요.</div></div>`;
   } else if (P.tab === "eval") {
     body = `<div class="stack"><p class="muted small">교수는 팀 단위로만 평가합니다.</p>${d.teams.map((t) => `<div class="card stack"><div class="row between"><div><h3>${esc(t.name)}</h3><span class="muted small">${esc(t.members.join(", "))}</span></div><span class="badge ${t.profDone ? "ok" : "warn"}">${t.profDone ? "평가 완료" : "미평가"}</span></div>${videoBtns(t)}<div><button class="btn primary" data-act="pform" data-team="${esc(t.name)}">${t.profDone ? "평가 수정하기" : "평가하기"}</button></div></div>`).join("")}</div>`;
   } else if (P.tab === "score") {
@@ -509,19 +571,21 @@ function viewProf() {
     <div class="card stack"><textarea id="rosterText" style="min-height:220px" placeholder="이름,학번,팀명&#10;김민성,202206003,01팀" spellcheck="false"></textarea><div class="row"><label class="btn" for="rosterFile">파일 불러오기 (csv·txt)</label><input type="file" id="rosterFile" accept=".csv,.txt,text/plain,text/csv" hidden><span class="muted small">현재 ${d.rosterCount}명 등록됨</span></div><p class="err" id="rerr" role="alert"></p><div><button class="btn primary" data-act="save-roster">명단 등록</button></div></div></div>`;
   }
   return `<div class="stack-lg"><div class="row between"><h1>교수자 메뉴</h1><button class="btn" data-act="prof-close">닫기</button></div>
-    ${P.form ? "" : `<div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" aria-selected="${P.tab === k}" data-act="ptab" data-tab="${k}">${l}</button>`).join("")}</div>`}${body}</div>`;
+    ${P.form ? "" : `<div class="row" style="gap:8px">${(d.projects || S.projects || []).filter((p) => p.ready).map((p) => `<button class="btn small ${S.prof.project === p.no ? "primary" : ""}" data-act="pproj" data-no="${esc(p.no)}" aria-pressed="${S.prof.project === p.no}">프로젝트 ${esc(p.no)} · ${esc(p.title)}${p.active ? "" : " (비활성)"}</button>`).join("")}</div>
+    <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" aria-selected="${P.tab === k}" data-act="ptab" data-tab="${k}">${l}</button>`).join("")}</div>`}${body}</div>`;
 }
 function openProf() {
-  if (S.prof.pw && S.prof.data) { S.prevView = S.view === "prof" ? S.prevView : S.view; S.view = "prof"; render(); return; }
+  const enter = () => { S.prof.project = null; S.prof.data = null; S.prof.exp = null; S.prof.form = null; S.view = "prof"; render(); };
+  if (S.prof.pw) { S.prevView = S.view === "prof" ? S.prevView : S.view; return enter(); }   /* 이미 인증했으면 프로젝트 선택부터 */
   modal({ title: "교수자 메뉴", desc: "교수자 비밀번호를 입력하세요.", label: "비밀번호", onSubmit: async (v) => {
-    S.prof.data = await api("prof_state", { ppw: v }); S.prof.pw = v;
-    S.prevView = S.view; S.view = "prof"; S.prof.tab = S.prof.data.rosterCount ? "urls" : "roster"; render();
+    const r = await api("prof_login", { ppw: v }); S.prof.pw = v; S.projects = r.projects;
+    S.prevView = S.view; enter();
   } });
 }
-async function refreshProf(keep = true) { S.prof.data = await api("prof_state", { ppw: S.prof.pw }); if (S.view === "prof") { const y = window.scrollY; render(); if (keep) window.scrollTo(0, y); } }
+async function refreshProf(keep = true) { S.prof.data = await api("prof_state", { ppw: S.prof.pw, project: S.prof.project }); if (S.view === "prof") { const y = window.scrollY; render(); if (keep) window.scrollTo(0, y); } }
 
 async function loadScore() {
-  S.prof.exp = await api("prof_export", { ppw: S.prof.pw });
+  S.prof.exp = await api("prof_export", { ppw: S.prof.pw, project: S.prof.project });
   if (S.view === "prof" && S.prof.tab === "score") { const y = window.scrollY; render(); window.scrollTo(0, y); }
 }
 function loadXlsxLib() {
@@ -535,6 +599,7 @@ function loadXlsxLib() {
 }
 async function downloadXlsx() {
   await loadScore();
+  const F = FM();
   await loadXlsxLib();
   const x = S.prof.exp, nameBySid = {};
   x.roster.forEach((r) => { nameBySid[r.sid] = r.name; });
@@ -545,10 +610,10 @@ async function downloadXlsx() {
 
   add("최종 점수", [["순위", "팀", "팀원", "평가한 학생 수", `학생 평가(100점)`, `교수 평가(100점)`, `최종 점수 (학생 ${wS}% + 교수 ${wP}%)`]]
     .concat(x.board.map((b) => [b.rank ?? "", b.team, b.members.join(", "), b.evaluators, b.student ?? "", b.prof ?? "", b.final ?? ""]))
-    .concat([[], [`※ 학생 평가 = 다른 팀 학생이 준 점수(6개 항목 평균)의 평균 ÷ 5 × 100`], [`※ 교수 평가 = 6개 항목 평균 ÷ 5 × 100`], [`※ 자기 평가와 팀 내 상호 평가는 팀 점수에 반영하지 않습니다.`]]),
+    .concat([[], [`※ 학생 평가 = 다른 팀 학생이 준 점수(${F.cross.items.length}개 항목 평균)의 평균 ÷ 5 × 100`], [`※ 교수 평가 = ${F.prof.items.length}개 항목 평균 ÷ 5 × 100`], [`※ 자기 평가와 팀 내 상호 평가는 팀 점수에 반영하지 않습니다.`]]),
     [6, 10, 22, 14, 16, 16, 28]);
 
-  const head = (type, extra) => extra.concat(FORMS[type].items.map((t, i) => `${i + 1}. ${t}`), ["항목 평균", FORMS[type].c1.label, FORMS[type].c2.label]);
+  const head = (type, extra) => extra.concat(F[type].items.map((t, i) => `${i + 1}. ${t}`), ["항목 평균", F[type].c1.label, F[type].c2.label]);
   const sheet = (type, extraHead, rowFn) => {
     const list = x.evals.filter((e) => e.type === type).map(rowFn);
     return [head(type, extraHead)].concat(list);
@@ -556,13 +621,13 @@ async function downloadXlsx() {
   const wid = (n) => [12, 12, 10, 10].concat(Array(n).fill(14), [10, 40, 40]);
   const rowOf = (extra, e) => extra.concat(e.scores, [avg(e.scores), e.c1, e.c2]);
 
-  add("다른 팀 평가", sheet("cross", ["평가자 학번", "평가자 이름", "평가자 팀", "대상 팀"], (e) => rowOf([e.sid, e.name, e.team, e.targetTeam], e)), wid(6));
-  add("교수 평가", sheet("prof", ["대상 팀"], (e) => rowOf([e.targetTeam], e)), [10].concat(Array(6).fill(14), [10, 40, 40]));
-  add("자기 평가", sheet("self", ["평가자 학번", "평가자 이름", "팀"], (e) => rowOf([e.sid, e.name, e.team], e)), [12, 12, 10].concat(Array(6).fill(14), [10, 40, 40]));
-  add("팀 내 상호 평가", sheet("peer", ["평가자 학번", "평가자 이름", "팀", "평가 대상 학번", "평가 대상 이름"], (e) => rowOf([e.sid, e.name, e.team, e.targetSid, nameBySid[e.targetSid] || ""], e)), [12, 12, 10, 14, 14].concat(Array(5).fill(14), [10, 40, 40]));
+  add("다른 팀 평가", sheet("cross", ["평가자 학번", "평가자 이름", "평가자 팀", "대상 팀"], (e) => rowOf([e.sid, e.name, e.team, e.targetTeam], e)), wid(F.cross.items.length));
+  add("교수 평가", sheet("prof", ["대상 팀"], (e) => rowOf([e.targetTeam], e)), [10].concat(Array(F.prof.items.length).fill(14), [10, 40, 40]));
+  add("자기 평가", sheet("self", ["평가자 학번", "평가자 이름", "팀"], (e) => rowOf([e.sid, e.name, e.team], e)), [12, 12, 10].concat(Array(F.self.items.length).fill(14), [10, 40, 40]));
+  add("팀 내 상호 평가", sheet("peer", ["평가자 학번", "평가자 이름", "팀", "평가 대상 학번", "평가 대상 이름"], (e) => rowOf([e.sid, e.name, e.team, e.targetSid, nameBySid[e.targetSid] || ""], e)), [12, 12, 10, 14, 14].concat(Array(F.peer.items.length).fill(14), [10, 40, 40]));
 
   const d = new Date(), p = (n) => String(n).padStart(2, "0");
-  XLSX.writeFile(wb, `프로젝트01_상호평가_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}.xlsx`);
+  XLSX.writeFile(wb, `프로젝트${S.prof.project}_상호평가_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}.xlsx`);
   toast("엑셀 파일을 내려받았습니다.");
 }
 
@@ -573,13 +638,14 @@ document.addEventListener("click", async (e) => {
   try {
     if (a === "prof") return openProf();
     if (a === "prof-close") { S.view = S.prevView || "projects"; if (S.view === "main" && !S.data) S.view = "projects"; return render(); }
-    if (a === "open-proj") return modal({ title: "프로젝트 01", desc: "교수자가 알려준 비밀번호를 입력하세요.", label: "프로젝트 비밀번호", onSubmit: async (v) => { const r = await api("enter", { pw: v }); S.pw = v; S.students = r.students; S.view = "pick"; render(); } });
-    if (a === "to-projects") { S.view = "projects"; return render(); }
+    if (a === "open-proj") { const no = el.dataset.no; return modal({ title: `프로젝트 ${no}`, desc: "교수자가 알려준 비밀번호를 입력하세요.", label: "프로젝트 비밀번호", onSubmit: async (v) => { const r = await api("enter", { project: no, pw: v }); S.project = no; S.pw = v; S.students = r.students; S.view = "pick"; render(); } }); }
+    if (a === "to-projects") { S.view = "projects"; render(); return loadProjects(); }
+    if (a === "reload-projects") { S.projectsErr = ""; S.projects = null; render(); return loadProjects(); }
     if (a === "pick") { const id = Number(el.dataset.id), name = el.dataset.name;
       return modal({ title: `${name}님, 학번을 입력하세요`, desc: "학번이 비밀번호입니다.", label: "학번", inputmode: "numeric", submit: "입장", onSubmit: async (v) => {
-        S.data = await api("login", { pw: S.pw, id, sid: v }); S.auth = { id, sid: v }; store("auth", JSON.stringify({ pw: S.pw, id, sid: v }));
+        S.data = await api("login", { project: S.project, pw: S.pw, id, sid: v }); S.auth = { id, sid: v }; store("auth", JSON.stringify({ project: S.project, pw: S.pw, id, sid: v }));
         S.view = "main"; S.tab = "cross"; S.form = null; S.fb = null; render(); } }); }
-    if (a === "logout") { S.auth = null; S.data = null; S.form = null; S.fb = null; store("auth", null); try { S.students = (await api("enter", { pw: S.pw })).students; } catch (e2) { /* 목록은 다시 입장할 때 불러옵니다 */ } S.view = "pick"; return render(); }
+    if (a === "logout") { S.auth = null; S.data = null; S.form = null; S.fb = null; store("auth", null); try { S.students = (await api("enter", { project: S.project, pw: S.pw })).students; } catch (e2) { /* 목록은 다시 입장할 때 불러옵니다 */ } S.view = "pick"; return render(); }
     if (a === "tab") { S.tab = el.dataset.tab; S.fb = null; if (S.tab !== "feedback") { try { S.data = await api("state", sAuth()); } catch (err) { /* 이전 상태 유지 */ } } return render(); }
     if (a === "form") { const type = el.dataset.type, target = el.dataset.target; S.form = { type, target, label: el.dataset.label || "", key: type === "self" ? "self|" + target : type + "|" + target }; render(); return bindForm(async (v) => {
       await api("submit", { ...sAuth(), type, target, ...v }); S.data = await api("state", sAuth()); S.form = null; render(); toast("평가를 제출했습니다."); }); }
@@ -590,18 +656,19 @@ document.addEventListener("click", async (e) => {
     if (a === "refresh-score") { await loadScore(); return toast("새로고침했습니다."); }
     if (a === "xlsx") { el.disabled = true; try { await downloadXlsx(); } finally { el.disabled = false; } return; }
     if (a === "refresh-prof") { await refreshProf(); return toast("새로고침했습니다."); }
-    if (a === "save-url") { const tr = el.closest("tr"); await api("prof_set_urls", { ppw: S.prof.pw, team: el.dataset.team, long: tr.querySelector('[data-f="long"]').value.trim(), short: tr.querySelector('[data-f="short"]').value.trim() }); const y = window.scrollY; S.prof.data = await api("prof_state", { ppw: S.prof.pw }); render(); window.scrollTo(0, y); return toast(`${el.dataset.team} 영상 주소를 저장했습니다.`); }
-    if (a === "pform") { S.prof.form = { team: el.dataset.team }; render(); return bindForm(async (v) => { await api("prof_submit", { ppw: S.prof.pw, team: S.prof.form.team, ...v }); S.prof.form = null; await refreshProf(false); toast("교수 평가를 저장했습니다."); }); }
+    if (a === "save-url") { const tr = el.closest("tr"); await api("prof_set_urls", { ppw: S.prof.pw, project: S.prof.project, team: el.dataset.team, long: tr.querySelector('[data-f="long"]').value.trim(), short: tr.querySelector('[data-f="short"]').value.trim() }); const y = window.scrollY; S.prof.data = await api("prof_state", { ppw: S.prof.pw, project: S.prof.project }); render(); window.scrollTo(0, y); return toast(`${el.dataset.team} 영상 주소를 저장했습니다.`); }
+    if (a === "pform") { S.prof.form = { team: el.dataset.team }; render(); return bindForm(async (v) => { await api("prof_submit", { ppw: S.prof.pw, project: S.prof.project, team: S.prof.form.team, ...v }); S.prof.form = null; await refreshProf(false); toast("교수 평가를 저장했습니다."); }); }
     if (a === "pform-cancel") { S.prof.form = null; return render(); }
-    if (a === "save-roster") { const text = $("#rosterText").value; $("#rerr").textContent = ""; try { const r = await api("prof_set_roster", { ppw: S.prof.pw, text }); if (S.pw) { try { S.students = (await api("enter", { pw: S.pw })).students; } catch (e2) { /* 다음 입장 때 갱신 */ } } await refreshProf(false); toast(`${r.count}명, ${r.teams}개 팀을 등록했습니다.`); } catch (err) { $("#rerr").textContent = err.message; } return; }
+    if (a === "pproj") { S.prof.project = el.dataset.no; S.prof.form = null; S.prof.exp = null; S.prof.data = await api("prof_state", { ppw: S.prof.pw, project: S.prof.project }); S.prof.tab = S.prof.data.rosterCount ? "urls" : "roster"; return render(); }
+    if (a === "save-roster") { const text = $("#rosterText").value; $("#rerr").textContent = ""; try { const r = await api("prof_set_roster", { ppw: S.prof.pw, project: S.prof.project, text }); if (S.pw && S.project === S.prof.project) { try { S.students = (await api("enter", { project: S.project, pw: S.pw })).students; } catch (e2) { /* 다음 입장 때 갱신 */ } } await refreshProf(false); toast(`${r.count}명, ${r.teams}개 팀을 등록했습니다.`); } catch (err) { $("#rerr").textContent = err.message; } return; }
   } catch (err) { toast(err.message); }
 });
 document.addEventListener("change", async (e) => {
   const el = e.target;
   try {
-    if (el.id === "fbOpen" || el.id === "incProf") {
-      const r = await api("prof_set_feedback", { ppw: S.prof.pw, open: $("#fbOpen").checked, includeProf: $("#incProf").checked });
-      S.prof.data.feedbackOpen = r.feedbackOpen; S.prof.data.includeProf = r.includeProf;
+    if (el.id === "fbOpen") {
+      const r = await api("prof_set_feedback", { ppw: S.prof.pw, project: S.prof.project, open: $("#fbOpen").checked });
+      S.prof.data.feedbackOpen = r.feedbackOpen;
       $("#fbState").textContent = r.feedbackOpen ? "피드백 공개 중" : "피드백 비공개";
       toast(r.feedbackOpen ? "피드백을 공개했습니다." : "피드백을 비공개로 바꿨습니다.");
     }
@@ -612,10 +679,11 @@ document.addEventListener("change", async (e) => {
 /* ===== 시작 ===== */
 (async function init() {
   render();
+  await loadProjects();
   const saved = store("auth"); if (!saved || !API_URL) return;
   try {
     const a = JSON.parse(saved);
-    S.pw = a.pw; S.data = await api("login", a); S.auth = { id: a.id, sid: a.sid }; S.view = "main"; render();
+    S.project = a.project || "01"; S.pw = a.pw; S.data = await api("login", a); S.auth = { id: a.id, sid: a.sid }; S.view = "main"; render();
   } catch (e) { store("auth", null); S.data = null; S.auth = null; render(); }
 })();
 </script>
